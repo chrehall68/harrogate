@@ -25,7 +25,7 @@ if (TargetApp.platform === TargetApp.supported_platforms.WINDOWS_PC) {
 router = Express.Router();
 
 // get information about the currently running program
-router.post('/', function(request, response, next) {
+router.post('/', function (request, response, next) {
   // Validate the project req
   if (!request.body.user) {
     next(new ServerError(422, 'Parameter \'user\' missing'));
@@ -37,40 +37,40 @@ router.post('/', function(request, response, next) {
   }
 
   // Create the ws resource
-  HostFileSystem.open(request.logged_in_user.preferences.workspace.path).then(function(ws_directory) {
+  HostFileSystem.open(request.logged_in_user.preferences.workspace.path).then(function (ws_directory) {
     // return 400 if it is a file
     if (!(ws_directory instanceof Directory)) {
       throw new ServerError(400, ws_directory.path + ' is a file');
     }
     var ret = new Workspace(ws_directory);
-    if(!ret.is_valid()) throw ret.ws_directory.path + ' is not a valid workspace';
+    if (!ret.is_valid()) throw ret.ws_directory.path + ' is not a valid workspace';
     return ret;
-  }).then(function(ws_resource) {
+  }).then(function (ws_resource) {
     // and attach it to the request object
     return [ws_resource, ws_resource.get_projects(request.body.user)];
   }, function (reason) {
     throw new ServerError(400, reason);
-  }).spread(function(ws_resource, project_resources) {
+  }).spread(function (ws_resource, project_resources) {
     // search for project.name is request.params.project
-    var project_resource = project_resources.filter(function(project) {
+    var project_resource = project_resources.filter(function (project) {
       return project.name === request.body.name;
     })[0];
 
     // did we find a project?
     if (!project_resource) throw new ServerError(404, 'Project ' + request.body.name + ' does not exists');
-    
+
     // delete the bin folder if it exists
     return [project_resource, project_resource.bin_directory];
-  }).spread((function(project_resource, bin_dir) {
+  }).spread((function (project_resource, bin_dir) {
     // bin folder exists, delete it
     return bin_dir.remove().then(function () { return [project_resource, bin_dir]; });
-  }), function() {}).spread(function(project_resource, bin_dir) {
+  }), function () { }).spread(function (project_resource, bin_dir) {
     // create the bin folder
     return bin_dir.create().then(function () {
       return project_resource;
     });
-  }).then(function(project_resource) {
-    return project_resource.get_representation(false).then(function(project_details) {
+  }).then(function (project_resource) {
+    return project_resource.get_representation(false).then(function (project_details) {
       var language = project_details.parameters.language;
       if (language.toLowerCase() === 'c') {
         if (TargetApp.platform === TargetApp.supported_platforms.WINDOWS_PC) {
@@ -84,8 +84,10 @@ router.post('/', function(request, response, next) {
       else if (language.toLowerCase() === 'c++') {
         compilation_environment = require('../compilation-environments/c++/g++.js');
       }
-      
-      return compilation_environment.compile(project_resource, function(error, stdout, stderr) {
+      else if (language.toLowerCase() === "makefile") {
+        compilation_environment = require("../compilation-environments/makefile/makefile.js")
+      }
+      return compilation_environment.compile(project_resource, function (error, stdout, stderr) {
         var result;
         result = {
           stdout: stdout,
@@ -103,7 +105,7 @@ router.post('/', function(request, response, next) {
         })), 'utf8');
       });
     });
-  })["catch"](function(error) {
+  })["catch"](function (error) {
     next(error);
   }).done();
 });

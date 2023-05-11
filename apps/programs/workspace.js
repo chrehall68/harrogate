@@ -1,5 +1,5 @@
 var AppCatalog, AppManifest, Directory, File, Fs, FsApp, Path, Project, Q, ServerError, Tar, Workspace,
-  bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+  bind = function (fn, me) { return function () { return fn.apply(me, arguments); }; };
 
 Fs = require('fs');
 
@@ -23,7 +23,7 @@ File = require(AppCatalog.catalog['Host Filesystem'].path + '/file.js');
 
 AppManifest = require('./manifest.json');
 
-Workspace = (function() {
+Workspace = (function () {
   function Workspace(ws_directory) {
     this.ws_directory = ws_directory;
     this.create_project = bind(this.create_project, this);
@@ -40,12 +40,11 @@ Workspace = (function() {
 
     try {
       this.users = JSON.parse(Fs.readFileSync(users_path, 'utf8'));
-    } catch(e) {}
+    } catch (e) { }
 
-    if(this.users.constructor === Array)
-    {
+    if (this.users.constructor === Array) {
       var new_users = {};
-      this.users.forEach(function(user) {
+      this.users.forEach(function (user) {
         new_users[user] = {
           mode: "Simple"
         };
@@ -54,20 +53,20 @@ Workspace = (function() {
     }
   }
 
-  Workspace.prototype.is_valid = function() {
-    return Q.all([this.ws_directory.is_valid()]).then(function(values) {
-      return values.reduce(function(previousValue, currentValue) {
+  Workspace.prototype.is_valid = function () {
+    return Q.all([this.ws_directory.is_valid()]).then(function (values) {
+      return values.reduce(function (previousValue, currentValue) {
         return previousValue && currentValue;
       });
     });
   };
 
-  Workspace.prototype.get_project = function(user, name) {
+  Workspace.prototype.get_project = function (user, name) {
     user = user || 'Default User';
-    return this.get_projects(user).then((function(_this) {
-      return function(projects) {
+    return this.get_projects(user).then((function (_this) {
+      return function (projects) {
         var project;
-        project = ((function() {
+        project = ((function () {
           var i, len, results;
           results = [];
           for (i = 0, len = projects.length; i < len; i++) {
@@ -87,19 +86,19 @@ Workspace = (function() {
     })(this));
   };
 
-  Workspace.prototype.sync_users = function() {
+  Workspace.prototype.sync_users = function () {
     const file = Path.join(this.ws_directory.path, 'users.json');
     Fs.writeFileSync(file, JSON.stringify(this.users));
   }
 
-  Workspace.prototype.update_user = function(user, data) {
-    if(!(user in this.users)) return;
+  Workspace.prototype.update_user = function (user, data) {
+    if (!(user in this.users)) return;
     this.users[user] = data;
     this.sync_users();
   }
 
-  Workspace.prototype.add_user = function(user) {
-    if(user in this.users) return;
+  Workspace.prototype.add_user = function (user) {
+    if (user in this.users) return;
     this.users[user] = {
       mode: "Simple"
     };
@@ -107,20 +106,20 @@ Workspace = (function() {
     console.log("ADD USER!!!!!!!!!!!!");
   }
 
-  Workspace.prototype.remove_user = function(user) {
-    if(user === 'Default User') return;
-    if(!(user in this.users)) return;
+  Workspace.prototype.remove_user = function (user) {
+    if (user === 'Default User') return;
+    if (!(user in this.users)) return;
     delete this.users[user];
-    
+
     var dir = Directory.create_from_path(Path.join(this.ws_directory.path, user));
     this.sync_users();
     return dir.remove();
   }
 
-  Workspace.prototype.get_projects = function(user) {
+  Workspace.prototype.get_projects = function (user) {
     user = user || 'Default User';
     // a project has at least a project file *.project.json located in the workspace root
-    return this.ws_directory.get_children().then(function(children) {
+    return this.ws_directory.get_children().then(function (children) {
       // create the project resources (exclude non-folders)
       return Q.all(children.filter(function (user_dir) {
         return user_dir instanceof Directory;
@@ -135,7 +134,7 @@ Workspace = (function() {
       })).then(function (users) {
         var user_projects = users.filter(function (o) {
           return o.user === user;
-        })[0] || {projects: []};
+        })[0] || { projects: [] };
 
         return user_projects.projects.map(function (child) {
           return new Project(child.name,
@@ -150,7 +149,7 @@ Workspace = (function() {
     });
   };
 
-  Workspace.prototype.get_representation = function(user) {
+  Workspace.prototype.get_representation = function (user) {
     var representation;
     representation = {
       links: {
@@ -163,31 +162,31 @@ Workspace = (function() {
       }
     };
     // get the projects
-    return this.get_projects(user).then(function(project_resources) {
+    return this.get_projects(user).then(function (project_resources) {
       // get the representation of all project resources
-      return Q.allSettled(project_resources.map(function(project_resource) {
+      return Q.allSettled(project_resources.map(function (project_resource) {
         return project_resource.get_representation(true);
       }));
-    }).then(function(project_representation_promises) {
+    }).then(function (project_representation_promises) {
       // add the projects (just the valid ones)
 
       return project_representation_promises
-        .filter(function(promise) { return promise.state === 'fulfilled'; })
-        .map(function(promise) { return promise.value; });
-    }).then(function(values) {
+        .filter(function (promise) { return promise.state === 'fulfilled'; })
+        .map(function (promise) { return promise.value; });
+    }).then(function (values) {
       representation.projects = values;
       return representation;
     });
   };
 
-  Workspace.prototype.init = function() {};
+  Workspace.prototype.init = function () { };
 
-  Workspace.prototype.import_from_archive = function(pack) {
-    return Q.Promise((function(_this) {
-      return function(resolve, reject, notify) {
+  Workspace.prototype.import_from_archive = function (pack) {
+    return Q.Promise((function (_this) {
+      return function (resolve, reject, notify) {
         var extract;
         extract = Tar.extract();
-        extract.on('entry', function(header, stream, callback) {
+        extract.on('entry', function (header, stream, callback) {
           var file_name, project_name, ref, type, type_root_directory_resource;
           ref = header.name.split('/'), project_name = ref[0], type = ref[1], file_name = ref[2];
           // skip this file if any of project_name, type, file_name is not set
@@ -195,7 +194,7 @@ Workspace = (function() {
             callback();
             return;
           }
-          type_root_directory_resource = (function() {
+          type_root_directory_resource = (function () {
             switch (type) {
               case 'include':
                 return this.include_directory;
@@ -209,20 +208,20 @@ Workspace = (function() {
             callback();
             return;
           }
-          return type_root_directory_resource.is_valid().then(function(valid) {
+          return type_root_directory_resource.is_valid().then(function (valid) {
             // create <ws>/<type> if it doesn't exist
             if (!valid) {
               return Q.nfcall(Fs.mkdir, type_root_directory_resource.path);
             } else {
               return Q(void 0);
             }
-          }).then(function() {
+          }).then(function () {
             // get the project resource
             return _this.get_project(project_name);
-          }).then((function(project_resource) {
+          }).then((function (project_resource) {
             // the project already exist
             return project_resource;
-          }), function(error) {
+          }), function (error) {
             if (((error != null ? error.code : void 0) != null) && error.code === 404) {
               // the project does not exist yet, create it
               return _this.create_project('Default User', project_name, 'C');
@@ -230,10 +229,10 @@ Workspace = (function() {
               // some other error happended, rethrow
               throw error;
             }
-          }).then(function(project_resource) {
+          }).then(function (project_resource) {
             var directory_resource;
             // get the directory resource and check if it is valid (= existing)
-            directory_resource = (function() {
+            directory_resource = (function () {
               switch (type) {
                 case 'include':
                   return project_resource.include_directory;
@@ -244,28 +243,28 @@ Workspace = (function() {
               }
             })();
             return [Q(directory_resource), directory_resource.is_valid()];
-          }).spread(function(directory_resource, valid) {
+          }).spread(function (directory_resource, valid) {
             // create <ws>/<type> if it doesn't exist
             return [Q(directory_resource), !valid ? Q.nfcall(Fs.mkdir, directory_resource.path) : Q(void 0)];
-          }).spread(function(directory_resource) {
+          }).spread(function (directory_resource) {
             var fs_write_stream;
             // create the file
             fs_write_stream = Fs.createWriteStream(Path.join(directory_resource.path, file_name));
             stream.pipe(fs_write_stream);
-            return stream.on('end', function() {
+            return stream.on('end', function () {
               return callback();
             });
-          })["catch"](function(error) {
+          })["catch"](function (error) {
             // an error happened, continue with the next file
             console.log("Unexpected error while importing " + project_name + "/" + type + "/" + file_name);
             console.log(error);
             return callback();
           }).done();
         });
-        extract.on('error', function(error) {
+        extract.on('error', function (error) {
           return reject(error);
         });
-        extract.on('finish', function() {
+        extract.on('finish', function () {
           return resolve();
         });
         return pack.pipe(extract);
@@ -273,7 +272,7 @@ Workspace = (function() {
     })(this));
   };
 
-  Workspace.prototype.create_project = function(user, name, language, src_file_name) {
+  Workspace.prototype.create_project = function (user, name, language, src_file_name) {
     var content;
     if (src_file_name == null) {
       src_file_name = 'main.c';
@@ -285,9 +284,8 @@ Workspace = (function() {
     });
 
     var programContent;
-    if (language === 'Python')
-    {
-      programContent =  '#!/usr/bin/python3\n' 
+    if (language === 'Python') {
+      programContent = '#!/usr/bin/python3\n'
         + 'sys.path.append("/usr/lib")\n'
         + 'import os, sys\n'
         + 'import kipr as k\n'
@@ -297,10 +295,9 @@ Workspace = (function() {
         + '\n'
         + 'if __name__== "__main__":\n'
         + '    sys.stdout = os.fdopen(sys.stdout.fileno(),"w",0)\n'
-        + '    main();\n'; 
+        + '    main();\n';
     }
-    else
-    {
+    else if (language == "C") {
       programContent = '#include <kipr/wombat.h>\n'
         + '\n'
         + 'int main()\n'
@@ -309,11 +306,28 @@ Workspace = (function() {
         + '    return 0;\n'
         + '}\n';
     }
+    else if (language == "C++") {
+      programContent = "#include <iostream>\n"
+        + "#include <kipr/wombat.h>\n"
+        + "using namespace std;\n"
+        + "\n"
+        + "int main(){\n"
+        + "  cout << \"Hello World!\" << endl;\n"
+        + "  return 0;\n"
+        + "}";
+    }
+    else if (language == "Makefile") {
+      programContent = "default: all\n"
+        + "all: ../bin/main.o\n"
+        + "  g++ ../bin/main.o -lkipr -o ../bin/botball_user_program\n"
+        + "../bin/main.o:\n"
+        + "  g++ -c ./main.cpp -o ../bin/main.o\n";
+    }
 
     return this.ws_directory.create_subdirectory(user, false).then((function (_root) {
       return function (user_dir) {
         return user_dir.create_subdirectory(name).then(function (project_dir) {
-          return project_dir.create_file('project.manifest', content, 'ascii').then(function(project_file) {
+          return project_dir.create_file('project.manifest', content, 'ascii').then(function (project_file) {
             return new Project(name, project_file,
               Directory.create_from_path(Path.join(project_dir.path, 'include')),
               Directory.create_from_path(Path.join(project_dir.path, 'src')),
@@ -321,11 +335,11 @@ Workspace = (function() {
               Directory.create_from_path(Path.join(project_dir.path, 'bin')),
               Directory.create_from_path(Path.join(project_dir.path, 'lib')));
           });
-        }).then(function(project_resource) {
-          return project_resource.include_directory.create().then(function() {
-            return project_resource.data_directory.create().then(function() {
-              return project_resource.src_directory.create().then(function() {
-                return project_resource.src_directory.create_file(src_file_name, programContent, 'ascii').then(function() {
+        }).then(function (project_resource) {
+          return project_resource.include_directory.create().then(function () {
+            return project_resource.data_directory.create().then(function () {
+              return project_resource.src_directory.create().then(function () {
+                return project_resource.src_directory.create_file(src_file_name, programContent, 'ascii').then(function () {
                   return project_resource;
                 });
               });

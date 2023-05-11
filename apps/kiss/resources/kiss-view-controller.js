@@ -98,7 +98,7 @@ exports.controller = function ($scope, $rootScope, $location, $http, $timeout, A
   }
 
   $scope.reload_ws = function () {
-    
+
     return AppCatalogProvider.catalog.then(function (app_catalog) {
       var projects_resource, ref, ref1;
       projects_resource = (ref = app_catalog['Programs']) != null ? (ref1 = ref.web_api) != null ? ref1.projects : void 0 : void 0;
@@ -158,23 +158,23 @@ exports.controller = function ($scope, $rootScope, $location, $http, $timeout, A
       $location.search('project', project.name);
     }
 
-    
-    
+
+
     return $http.get(project.links.self.href).success(function (data, status, headers, config) {
       var file, selected, selected_file, selected_file_cat;
       $scope.project_resource = data;
       selected_file = null;
       selected_file_cat = null;
-      
+
       //This block changes Project Explorer table theme colors
       var project_explorer = document.querySelectorAll('.panel.panel-primary.panel-stretch:not(panel-heading)')[4];
       var project_container_table = project_explorer.getElementsByTagName("tbody")[0]; //Project Explorer Table
       var project_table_row = project_container_table.getElementsByTagName("tr"); //Table row array object
       var table_row = Array.from(project_table_row); // table row array
       table_row.forEach(item => table_change(item)); //each row in table
-      
-      
-      
+
+
+
       if ($location.search().file != null) {
         selected = [];
         if ($location.search().cat === 'include' && ($scope.project_resource.include_files != null)) {
@@ -233,12 +233,12 @@ exports.controller = function ($scope, $rootScope, $location, $http, $timeout, A
   };
   var overall_selected_file;
   $scope.select_file = function (file, file_type) {
-    
+
     $scope.selected_file = file;
     $scope.compiler_output = '';
     $location.search('file', file.name);
     $location.search('cat', file_type);
-    
+
     $http.get($scope.selected_file.links.self.href).success(function (data, status, headers, config) {
       $scope.display_file_menu = false;
       $scope.displayed_file = data;
@@ -372,7 +372,10 @@ exports.controller = function ($scope, $rootScope, $location, $http, $timeout, A
     return DownloadProjectModalFactory.open(project);
   };
   $scope.show_add_include_file_modal = function () {
-    return FilenameModalFactory.open('Create New Include File', 'Filename', ['.h'], 'Create').then(function (mData) {
+    var language_array = ['.h']
+    if ($scope.project_resource.parameters.language === "C++" || $scope.project_resource.parameters.language === "Makefile")
+      language_array.push('.hpp')
+    return FilenameModalFactory.open('Create New Include File', 'Filename', language_array, 'Create').then(function (mData) {
       if ($scope.ws == null || $scope.project_resource == null) return;
 
       var file = {
@@ -393,8 +396,11 @@ exports.controller = function ($scope, $rootScope, $location, $http, $timeout, A
     if ($scope.project_resource.parameters.language === 'Python') {
       language_array = ['.py'];
     }
-    if ($scope.project_resource.parameters.language === 'C++') {
+    else if ($scope.project_resource.parameters.language === 'C++') {
       language_array = ['.cpp'];
+    }
+    else if ($scope.project_resource.parameters.language === 'Makefile') {
+      language_array = ['.cpp', '.c'];
     }
 
     return FilenameModalFactory.open('Create New Source File', 'Filename', language_array, 'Create').then(function (mData) {
@@ -436,33 +442,33 @@ exports.controller = function ($scope, $rootScope, $location, $http, $timeout, A
   $scope.open_file_menu = function () {
     return $scope.display_file_menu = true;
   };
-  
-  table_change = function(item){ // item is 1 table row array object
+
+  table_change = function (item) { // item is 1 table row array object
     var i;
     var td = item.getElementsByTagName("td");
     var th = item.getElementsByTagName("th");
-   
+
     var table_data = Array.from(td);
-    var table_row_header = Array.from(th); 
-  
+    var table_row_header = Array.from(th);
+
     Array.from(td).forEach(element => element.style.backgroundColor = '#05284e');
     Array.from(td).forEach(element => element.style.color = '#ffffff');
     Array.from(th).forEach(element => element.style.backgroundColor = '#05284e');
     Array.from(th).forEach(element => element.style.color = '#ffffff');
 
-    if($scope.darkMode){ //if currently in dark mode --> change to dark aspects
+    if ($scope.darkMode) { //if currently in dark mode --> change to dark aspects
 
-      for (i = 0; i < table_data.length; i++){ //changes td tag
-       
-        if(item.classList.contains("info")) { //currently selected file
+      for (i = 0; i < table_data.length; i++) { //changes td tag
+
+        if (item.classList.contains("info")) { //currently selected file
           table_data[i].style.backgroundColor = '#42a5d7';
           table_data[i].style.color = '#ffffff';
         }
 
       }
 
-      for (i = 0; i < table_row_header.length; i++){ //changes th tag
-        if(item.classList.contains("info")) {
+      for (i = 0; i < table_row_header.length; i++) { //changes th tag
+        if (item.classList.contains("info")) {
           table_row_header[i].style.backgroundColor = '#42a5d7';
           table_row_header[i].style.color = '#ffffff';
         }
@@ -473,27 +479,27 @@ exports.controller = function ($scope, $rootScope, $location, $http, $timeout, A
       }
 
     }
-    
+
     else { //if currently in light mode --> change to light aspects
 
-      for (i = 0; i < table_data.length; i++){ //change td tag
-        if(item.classList.contains("info")){
+      for (i = 0; i < table_data.length; i++) { //change td tag
+        if (item.classList.contains("info")) {
 
           table_data[i].style.backgroundColor = '#d9edf7';
           table_data[i].style.color = '#291c10';
-          
+
         }
         else {
           table_data[i].style.backgroundColor = '#f5f5f5';
           table_data[i].style.color = '#291c10';
         }
       }
-      for (i = 0; i < table_row_header.length; i++){ //change th tag
-        if(item.classList.contains("info")){
+      for (i = 0; i < table_row_header.length; i++) { //change th tag
+        if (item.classList.contains("info")) {
 
           table_row_header[i].style.backgroundColor = '#d9edf7';
           table_row_header[i].style.color = '#291c10';
-          
+
         }
         else {
           table_row_header[i].style.backgroundColor = '#f5f5f5';
@@ -501,14 +507,14 @@ exports.controller = function ($scope, $rootScope, $location, $http, $timeout, A
         }
       }
     }
-   
+
   };
 
 
   $scope.toggle_theme = function () {
     $scope.darkMode = !($scope.darkMode); // toggle between light and dark theme
     dark_mode = $scope.darkMode;
-    
+
     var term = document.querySelectorAll('.panel.panel-primary.panel-stretch:not(panel-heading)')[2];
     var project_explorer = document.querySelectorAll('.panel.panel-primary.panel-stretch:not(panel-heading)')[4];
     var project_container_table = project_explorer.getElementsByTagName("tbody")[0]; //Project Explorer Table
@@ -516,34 +522,34 @@ exports.controller = function ($scope, $rootScope, $location, $http, $timeout, A
     var table_row = Array.from(project_table_row); // table row array
     var nav = document.getElementsByClassName('container-fluid')[0];
     var container = document.getElementById('view-container');
-    if($scope.darkMode) {
+    if ($scope.darkMode) {
       editor.setOption('theme', 'kiss-dark');
       document.getElementById('view-content-container').className = "dark-theme-background";
       term.classList.add("dark-empty-editor");
       project_explorer.classList.add("dark-empty-editor");
       container.classList.add("container-fluid-dark");
-      
-     nav.classList.add("container-fluid-dark");
-     table_row.forEach(item => table_change(item)); //each row in table
-     
+
+      nav.classList.add("container-fluid-dark");
+      table_row.forEach(item => table_change(item)); //each row in table
+
     }
     else {
-      editor.setOption('theme','kiss-default');
+      editor.setOption('theme', 'kiss-default');
       document.getElementById('view-content-container').className = "light-theme-background";
-     var term = document.getElementsByClassName('panel panel-primary panel-stretch')[2];
-     term.classList.remove("dark-empty-editor") ;
-     var project_explorer = document.getElementsByClassName('panel panel-primary panel-stretch')[4];
-     project_explorer.classList.remove("dark-empty-editor");
-     project_container_table.style.backgroundColor = '#f5f5f5';
-     project_container_table.style.color = '#333333';
+      var term = document.getElementsByClassName('panel panel-primary panel-stretch')[2];
+      term.classList.remove("dark-empty-editor");
+      var project_explorer = document.getElementsByClassName('panel panel-primary panel-stretch')[4];
+      project_explorer.classList.remove("dark-empty-editor");
+      project_container_table.style.backgroundColor = '#f5f5f5';
+      project_container_table.style.color = '#333333';
       nav.classList.remove("container-fluid-dark");
       container.classList.remove("container-fluid-dark");
-      Array.from(project_table_row).forEach(table_change,null);
+      Array.from(project_table_row).forEach(table_change, null);
     }
-    
+
   };
 
-  
+
 
 
   $scope.show_add_project_modal = function () {
@@ -579,10 +585,13 @@ exports.controller = function ($scope, $rootScope, $location, $http, $timeout, A
     } else if ($("#programmingLanguage").val() === "C") {
       $("#sourceFileName").val("main.c");
     }
-    else {
+    else if ($("#programmingLanguage").val() === "C++") {
       // it's c++
       $("#sourceFileName").val("main.cpp");
     }
+    else if ($("#programmingLanguage").val() === "Makefile")
+      $("#sourceFileName").val("Makefile");
+
   };
   $scope.indent = function () {
     editor.execCommand('selectAll');
